@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        /* Base Styles */
+        body { 
+            margin: 0; 
+            font-family: 'IBM Plex Mono', monospace; 
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden; 
+        }
+        
+        /* Underlay Settings */
+        .underlay-page {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 1; /* behind overlay */
+            overflow: auto; /* allow underlay to scroll if needed */
+        }
+        [id="L0243550403"].underlay-page {
+            background-color: #d5a388;
+        }
+
+        /* Overlay Settings */
+        .overlay-page {
+            position: relative; z-index: 2; /* on top */
+            min-height: 100vh; pointer-events: none; /* Let clicks go to underlay */
+            padding: 2rem;
+        }
+        .overlay-page column-unit {
+            pointer-events: auto; /* re-enable clicks for text */
+            text-align: center;
+        }
+        
+        /* Cargo Column Shim (Rough approximation of Cargo's grid) */
+        column-set {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1rem;
+            width: 100%;
+        }
+        column-unit { grid-column: span 1; /* Default */ }
+        column-unit[span="2"] { grid-column: span 2; }
+        column-unit[span="3"] { grid-column: span 3; }
+        column-unit[span="4"] { grid-column: span 4; }
+        column-unit[span="6"] { grid-column: span 6; }
+        column-unit[span="12"] { grid-column: span 12; }
+
+        /* Temporary Media Styles (Since Cargo servers aren't parsing the hashes) */
+        media-item {
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(255, 255, 255, 0.4); border: 2px dashed #fff; 
+            width: 100%; aspect-ratio: 1 / 1; /* square filler */
+            cursor: pointer; transition: transform 0.3s ease;
+        }
+        media-item::after {
+            content: "Image Placeholder"; font-size: 10px; color: white;
+        }
+        media-item:hover {
+            background: rgba(255, 255, 255, 0.7); transform: scale(1.05);
+        }
+        
+        /* Top Navigation */
+        nav { position: fixed; top: 10px; left: 10px; z-index: 9999; }
+        nav a { margin-right: 15px; color: white; text-decoration: none; font-weight: bold; }
+
+        /* Rounded Nav Buttons */
+        .nav-button {
+            display: inline-block;
+            box-sizing: border-box;
+            width: calc(100% - 5vh);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 2em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px 0;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 30px;
+            background: rgba(213, 163, 136, 0.8);
+            backdrop-filter: blur(6px);
+            cursor: pointer;
+            text-align: center;
+            text-decoration: underline;
+            transition: all 0.3s ease;
+            color: #1a1a1a;
+        }
+        .nav-button:hover {
+            background: rgba(0,0,0,0.08);
+            border-color: rgba(0,0,0,0.3);
+            font-weight: 500;
+        }
+
+        /* --- Bug Crawler CSS --- */
+        #bug-crawler {
+          position: fixed;
+          z-index: 999999;
+          pointer-events: auto; /* clickable! */
+          cursor: pointer;
+          width: 72px;
+          height: 72px;
+          transform-origin: center center;
+          image-rendering: pixelated; /* good for small gifs */
+        }
+    </style>
+    <link rel="stylesheet" href="styles/custom-cursor.css">
+</head>
+<body>
+    <!-- Logo -->
+    <a href="entrance.html" style="position: fixed; top: 5px; left: 10px; z-index: 9999;">
+        <img src="images/logo.png" alt="Logo" style="max-width: 120px; height: auto;" />
+    </a>
+
+    <!-- Navigation removed as requested; links moved to overlay words -->
+
+    <!-- UNDERLAY CONTENT (HOME 1) -->
+    <div id="L0243550403" class="underlay-page page">
+        <br><br><br>
+        <column-set>
+            <column-unit slot="0" span="2"><img src="images/colr.png" style="width:100%; object-fit:contain;" /></column-unit>
+            <column-unit slot="1" span="1"></column-unit>
+            <column-unit slot="2" span="2"><img src="images/adobe_scan_13_mar.png" style="width:84.2%; object-fit:contain;" /></column-unit>
+            <column-unit slot="3" span="2"></column-unit>
+            <column-unit slot="4" span="2">&nbsp; &nbsp;<img src="images/adobe_scan_13_mar.png" style="width:84.2%; object-fit:contain;" /></column-unit>
+            <column-unit slot="5" span="1"></column-unit>
+            <column-unit slot="6" span="2"><img src="images/coll.png" style="width:100%; object-fit:contain;" /></column-unit>
+        </column-set>
+    </div>
+
+    <!-- OVERLAY CONTENT (BLAH BLAH) -->
+    <div id="D4022258681" class="overlay-page bodycopy">
+        <br>
+        <column-set style="hyphens: none; word-break: normal; overflow-wrap: break-word;">
+            <column-unit slot="0" span="2"></column-unit>
+            <column-unit slot="1" span="1" style="text-align: center; transform: translateX(-15px);">
+                <div style="display: inline-block; text-align: left;">
+                    <br><br><br><br><br>
+                    Welcome to the natural history museum archives. Reasearch, explore
+                    and be inspired! You are entering a digital re-imaging of the natural history
+                    museum archives, designed with discovery in mind. This digital space aims to
+                    replicate the feel of what it is like to look through the archives in real
+                    life, and I hope you are encouraged to visit the archives afterwards and
+                    discover the collections yourself.<br><br>
+                </div>
+            </column-unit>
+            <column-unit slot="2" span="6"></column-unit>
+            <column-unit slot="3" span="1" style="text-align: center; transform: translateX(30px);">
+                <div style="display: inline-block; text-align: left;">
+                    <br><br><br><br><br>
+                    Look around! This is a space for scientists, artists,
+                    novelists, researchers, students, fanatics and you! The archive holds something
+                    for everyone. browse our artwork collections, scientific reasearch, history of
+                    conservation, building history and more. Every part of the archive tells a
+                    story.<br><br><u><br></u>
+                </div>
+            </column-unit>
+            <column-unit slot="4" span="1"></column-unit>
+            <column-unit slot="5" span="1"></column-unit>
+        </column-set>
+        <column-set>
+            <column-unit slot="0" span="1"></column-unit>
+            <column-unit slot="1" span="3">
+                &nbsp;<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+                &nbsp; &nbsp; &nbsp;&nbsp;<br><br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+            </column-unit>
+            <column-unit slot="2" span="4">
+                <br><br><br><br><br><br><br><br><br><br><br><br><br>
+                &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br><br>
+                &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br>
+            </column-unit>
+            <column-unit slot="3" span="3">
+                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+                &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+            </column-unit>
+            <column-unit slot="4" span="1"></column-unit>
+        </column-set>
+        <column-set gutter="1">
+            <column-unit slot="0" span="1"></column-unit>
+            <column-unit slot="1" span="2" style="text-align: center; transform: translateX(2.08vw);"><a href="stories.html" class="nav-button">STORIES</a></column-unit>
+            <column-unit slot="2" span="2"></column-unit>
+            <column-unit slot="3" span="2" style="text-align: center;"><a href="browse.html" class="nav-button">BROWSE</a></column-unit>
+            <column-unit slot="4" span="2"></column-unit>
+            <column-unit slot="5" span="2" style="text-align: center; transform: translateX(-2.08vw);"><a href="explore.html" class="nav-button">EXPLORE</a></column-unit>
+            <column-unit slot="6" span="1"></column-unit>
+        </column-set>
+        <br><br><br>
+        &nbsp; &nbsp; &nbsp; &nbsp; <br><br><br><br><br>
+        <img src="images/plants.png" style="width: 100vw; position: relative; left: 50%; transform: translateX(-50%); display: block; margin: 0; margin-bottom: -2rem;" />
+    </div>
+
+
+    <!-- Injecting the Autonomous Bug Crawler script -->
+    <script src="scripts/bug-crawler.js"></script>
+    <script src="scripts/custom-cursor.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stories from the Archive</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/custom-cursor.css">
+    <link rel="stylesheet" href="styles/archive-core.css?v=1">
+    <style>
+        :root {
+            --archive-scale: 0.5; /* Scale books to 50% for the stories layout */
+        }
+        @font-face {
+            font-family: 'Garaje';
+            src: url('fonts/Garaje-53-Unicase.ttf') format('truetype');
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'IBM Plex Mono', monospace;
+            background-color: #d5a388;
+            color: #1a1a1a;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+
+        /* Cargo Column Shim */
+        column-set {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1rem;
+            width: 100%;
+        }
+        column-unit { grid-column: span 1; }
+        column-unit[span="2"] { grid-column: span 2; }
+        column-unit[span="3"] { grid-column: span 3; }
+        column-unit[span="4"] { grid-column: span 4; }
+        column-unit[span="5"] { grid-column: span 5; }
+        column-unit[span="6"] { grid-column: span 6; }
+        column-unit[span="12"] { grid-column: span 12; }
+
+        /* ========== LAYER SYSTEM ========== */
+        .layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+        }
+
+        .layer-1 { z-index: 1; }
+        .layer-2 { z-index: 2; }
+        .layer-3 { z-index: 3; }
+        .layer-interactive { z-index: 4; pointer-events: auto; }
+
+        .layer column-unit,
+        .layer-interactive column-unit {
+            pointer-events: none;
+        }
+
+        /* ========== LAYER 1: MARQUEE + TEXT ========== */
+        .marquee-track {
+            overflow: hidden;
+            white-space: nowrap;
+            width: 100vw;
+            display: flex;
+            align-items: flex-start;
+            padding-top: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            animation: scrollMarquee 25s linear infinite;
+            font-family: 'Garaje', sans-serif;
+            font-size: 6vh;
+            line-height: 1;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            color: rgba(0,0,0,0.07);
+            white-space: nowrap;
+            padding-right: 2vw;
+        }
+
+        @keyframes scrollMarquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .box {
+            display: inline-block;
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 0;
+            hyphens: none;
+            word-break: normal;
+            white-space: nowrap;
+        }
+
+        .layer-1-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+        }
+
+        .layer-1-bottom img {
+            width: 100%;
+            display: block;
+        }
+
+        /* ========== LAYER 2: COLUMN IMAGES ========== */
+        .layer-2 column-unit img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* ========== LAYER 3: PLANT IMAGES ========== */
+        .layer-3 column-unit img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* ========== INTERACTIVE LAYER: STORY SYSTEM ========== */
+
+        /* Story Sidebar Container */
+        .story-sidebar {
+            position: absolute;
+            top: 50%;
+            right: 2vw;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
+            width: 14vw;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        /* Story Selector Scrollable Area */
+        .story-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-grow: 1;
+            scrollbar-width: none;
+        }
+        .story-selector::-webkit-scrollbar { display: none; }
+
+        .add-story-btn {
+            margin: 10px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px dashed rgba(0,0,0,0.4);
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .add-story-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0,0,0,0.8);
+            transform: scale(1.02);
+        }
+
+        .story-tab {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 12px;
+            background: rgba(213, 163, 136, 0.8);
+            backdrop-filter: blur(6px);
+            cursor: pointer;
+            text-align: center;
+            white-space: normal;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            color: #1a1a1a;
+        }
+
+        .story-tab:hover {
+            background: rgba(0,0,0,0.08);
+        }
+
+        .story-tab.active {
+            background: rgba(0,0,0,0.12);
+            border-color: rgba(0,0,0,0.3);
+            font-weight: 500;
+        }
+
+        /* Center Stage */
+        .center-stage {
+            position: absolute;
+            top: 26vh;
+            left: 48vw;
+            transform: translate(calc(-50% - 2vh), 0);
+            width: 44vw;
+            height: 65vh;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+
+        .stage-left {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            transform: translate(-7vh, -3vh);
+        }
+
+        .plant-image {
+            max-height: 90%;
+            max-width: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transform: translateY(100px);
+            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .plant-image.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .book-popup {
+            position: absolute;
+            width: 100px;
+            height: 130px;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            pointer-events: auto;
+        }
+        .book-popup.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .book-popup.revealed:hover {
+            transform: translateY(-5px) scale(1.05);
+            z-index: 10 !important;
+        }
+
+        .book-popup.expanded {
+            transform: translateY(-10px) scale(2.2) !important;
+            z-index: 9999 !important;
+        }
+
+        .book-popup .wave-container {
+            width: 100%;
+            height: 100%;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 12px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .book-popup .node-meta {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            pointer-events: none;
+            padding: 4px;
+            border-radius: 4px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Title/Metadata stays visible on expansion but moves up to make room */
+        .book-popup.expanded .node-meta {
+            opacity: 1;
+            transform: translateY(-18px); /* Moved up a tiny bit more */
+            transition: transform 0.3s ease;
+        }
+
+        .book-info-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Push to bottom */
+            padding-bottom: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border-radius: 4px;
+            color: #fff !important;
+            text-align: center;
+        }
+
+        .info-author {
+            font-size: 5px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+        }
+
+        .info-meta {
+            font-size: 4px;
+            color: #fff;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding-bottom: 2px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+        }
+
+        .info-desc {
+            font-size: 3.5px; /* Slightly smaller to fit better */
+            line-height: 1.2;
+            color: #fff !important;
+            opacity: 1 !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+            padding: 0 8px;
+            margin-bottom: 2px;
+            mix-blend-mode: normal !important;
+        }
+
+        .info-archive-link,
+        .info-archive-link:link,
+        .info-archive-link:visited,
+        .info-archive-link:hover,
+        .info-archive-link:active {
+            display: block;
+            margin-top: 5px;
+            font-size: 4.5px;
+            color: #ffffff !important;
+            text-decoration: underline !important;
+            text-transform: lowercase !important;
+            letter-spacing: 0.05em;
+            text-align: center;
+            font-weight: 400 !important;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.8);
+            opacity: 1 !important;
+        }
+
+        .book-popup.expanded .book-info-panel {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .info-author {
+            font-size: 5px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-meta {
+            font-size: 4px;
+            color: #666;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 0.5px solid #ddd;
+            padding-bottom: 2px;
+        }
+
+        .info-desc {
+            font-size: 4.5px;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .info-archive-link {
+            display: block;
+            margin-top: 5px;
+            font-size: 4.5px;
+            color: #000 !important;
+            text-decoration: underline !important;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Story text area */
+        .story-content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-left: 2rem;
+            padding-top: 2rem;
+            height: 100%;
+        }
+
+        .story-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 0.8rem;
+            letter-spacing: 0.05em;
+            text-align: left;
+        }
+
+        .story-body {
+            font-size: 11px;
+            line-height: 1.7;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 8px;
+            text-align: left;
+            hyphens: none;
+            word-break: normal;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,0,0,0.15) transparent;
+        }
+
+        .story-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .story-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .story-body::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.15);
+            border-radius: 4px;
+        }
+
+        /* Back Button */
+        #back-btn {
+            position: fixed;
+            top: 5px;
+            left: 5px;
+            z-index: 9999;
+            pointer-events: auto;
+            transition: transform 0.2s;
+        }
+        #back-btn img {
+            width: 60px;
+            height: auto;
+            display: block;
+        }
+        #back-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Removed Lightbox CSS */
+
+        /* Fade transition for story content */
+        .center-stage.fading .plant-image,
+        .center-stage.fading .book-popup,
+        .center-stage.fading .story-content-area {
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .story-content-area {
+            opacity: 1;
+            transition: opacity 0.35s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="home.html" id="back-btn">
+        <img src="images/back.png" alt="Back" />
+    </a>
+
+    <!-- ========== LAYER 1: MARQUEE + DESCRIPTION + BORDER ========== -->
+    <div class="layer layer-1">
+        <div class="marquee-track">
+            <div class="marquee-content">STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;STORIES.&nbsp;&nbsp;</div>
+        </div>
+
+        <column-set style="position: absolute; top: 12vh; left: 8vh; padding: 0 2rem;">
+            <column-unit slot="0" span="2"></column-unit>
+            <column-unit slot="1" span="10">
+                <span class="box">Explore stories from the archive through primary information, compiled by your fellow archivists.</span>
+            </column-unit>
+        </column-set>
+
+        <column-set style="position: absolute; top: 18vh; left: 0; width: 100vw;">
+            <column-unit slot="0" span="12">
+                <img src="images/borderr2.png" alt="border" style="width: 100vw; height: auto; display: block;" />
+            </column-unit>
+        </column-set>
+    </div>
+
+    <div class="layer layer-2" style="padding: 0; box-sizing: border-box;">
+        <column-set style="height: 100%; align-items: flex-end; gap: 0;">
+            <column-unit slot="0" span="3">
+                <img src="images/colrcol.png" style="height: 92vh; width: auto;" />
+            </column-unit>
+            <column-unit slot="1" span="6">
+                &nbsp;
+            </column-unit>
+            <column-unit slot="2" span="2" style="text-align: right;">
+                <img src="images/columback.png" style="height: 92vh; width: auto; transform: translateX(-7vh);" />
+            </column-unit>
+            <column-unit slot="3" span="1"></column-unit>
+        </column-set>
+    </div>
+
+    <!-- ========== LAYER 3: PLANT IMAGES ========== -->
+    <div class="layer layer-3" style="padding: 0; box-sizing: border-box;">
+        <column-set style="height: 100%; align-items: flex-end; gap: 0;">
+            <column-unit slot="0" span="3">
+                <img src="images/plants3.png" style="height: 30vh; width: auto;" />
+            </column-unit>
+            <column-unit slot="1" span="6"></column-unit>
+            <column-unit slot="2" span="2" style="text-align: right;">
+                <img src="images/plants1.png" style="height: 30vh; width: auto; transform: translateX(-7vh);" />
+            </column-unit>
+            <column-unit slot="3" span="1"></column-unit>
+        </column-set>
+    </div>
+
+    <!-- ========== INTERACTIVE LAYER: STORY SELECTOR + CENTER STAGE ========== -->
+    <div class="layer layer-interactive">
+        <!-- Story Sidebar -->
+        <div class="story-sidebar">
+            <div class="story-selector" id="story-selector">
+                <!-- Tabs injected by JS -->
+            </div>
+            <div class="story-tab add-story-btn">ADD YOUR STORY +</div>
+        </div>
+
+        <!-- Center Stage -->
+        <div class="center-stage" id="center-stage">
+            <div class="stage-left" id="stage-left">
+                <img class="plant-image" id="plant-image" src="" alt="Story plant" />
+            </div>
+            <div class="story-content-area">
+                <div class="story-title" id="story-title">Loading...</div>
+                <div class="story-author-display" id="story-author-display" style="font-style: italic; margin-bottom: 1rem; opacity: 0.8; font-size: 0.9em; display: none;"></div>
+                <div class="story-body" id="story-body">
+                    Loading story...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Removed Book Lightbox HTML -->
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // ==========================================
+        // STORY DATA
+        // ==========================================
+        const stories = [
+            {
+                id: 'whaling',
+                tab: 'Whaling & Conservation',
+                title: 'The Whaling Industry and Conservation',
+                body: `The Natural History Museum's archives hold a wealth of material documenting the complex history of the whaling industry and the conservation efforts that eventually curtailed it. From the earliest days of commercial whaling in the 17th century, naturalists were already documenting the species they encountered.\n\nThe museum's collection includes detailed anatomical drawings, logbooks from whaling vessels, and early scientific papers that attempted to classify the various species of cetaceans encountered across the world's oceans. These documents reveal how scientific understanding evolved alongside — and often in tension with — commercial interests.\n\nBy the mid-20th century, the archives show a decisive shift in tone. Correspondence between museum scientists and government bodies reveals growing concern about declining whale populations. The museum played a quiet but important role in providing the scientific evidence that eventually led to the International Whaling Commission's moratorium on commercial whaling in 1986.`,
+                bookLeft: { img: 'images/books/book2.png', title: 'Cetacea Studies Vol. III', author: 'Richard Owen', date: '1894', category: 'Zoology', desc: 'A comprehensive study of whale anatomy and behaviour, compiled from museum specimens.' },
+                bookRight: { img: 'images/books/book3.png', title: 'Maritime Natural History', author: 'Charles Darwin', date: '1872', category: 'Zoology', desc: 'Field notes and illustrations from naturalists who accompanied whaling expeditions.' },
+                treeImg: 'images/tree.gif'
+            },
+            {
+                id: 'plumage',
+                tab: 'Plumage Trade',
+                title: 'Science Against the Plumage Trade',
+                body: `In the late 19th and early 20th centuries, the fashion industry's demand for exotic feathers drove several bird species to the brink of extinction. The Natural History Museum's archives document the crucial role that scientists played in opposing this destructive trade.\n\nThe collection includes passionate letters from ornithologists who witnessed the devastation firsthand, alongside meticulous population surveys that provided the hard data needed to make the case for protection. Museum specimens from this era serve as both scientific records and sobering reminders of what was lost.\n\nThe archives also document the work of the Royal Society for the Protection of Birds, which was founded in part by women who refused to wear feathered hats. The museum's scientists provided expert testimony that helped secure the Plumage (Prohibition) Act of 1921, one of the earliest pieces of wildlife protection legislation in British history.`,
+                bookLeft: { img: 'images/books/book4.png', title: 'Ornithological Surveys', author: 'John Curtis', date: '1888', category: 'Entomology', desc: 'Population records and field sketches documenting bird species affected by the plumage trade.' },
+                bookRight: { img: 'images/books/nhm-uk_l_667_9921698302081_barbut_frontcover_m_1col.png', title: 'The Feather Trade Papers', author: 'Alfred Russel Wallace', date: '1905', category: 'Zoology', desc: 'Correspondence between museum naturalists and parliamentary committees regarding bird protection.' },
+                treeImg: 'images/tree_static.png'
+            },
+            {
+                id: 'building',
+                tab: 'Building History',
+                title: 'The Cathedral of Nature',
+                body: `Alfred Waterhouse's iconic building, opened in 1881, was designed to be a cathedral to nature. The archives reveal the extraordinary level of detail that went into its construction — every terracotta tile on the facade depicts a different natural specimen.\n\nThe museum's architectural plans show how Waterhouse worked closely with the museum's first superintendent, Richard Owen, to create a building where the architecture itself would serve as an educational tool. The west wing features living species; the east wing features extinct ones.\n\nConstruction took nearly a decade, and the archives contain correspondence revealing numerous delays and budget overruns. Yet the result was a building that has inspired generations of visitors and scientists alike. Recent conservation work on the facade has used the original museum specimens as reference guides to restore damaged terracotta details.`,
+                bookLeft: { img: 'images/books/paper.png', title: 'Waterhouse Plans & Sketches', author: 'Alfred Waterhouse', date: '1873', category: 'Architecture', desc: 'Original architectural drawings and terracotta tile designs from the museum construction archives.' },
+                bookRight: { img: 'images/books/book2.png', title: 'Owen\'s Vision', author: 'Richard Owen', date: '1881', category: 'Architecture', desc: 'Richard Owen\'s correspondence regarding the design brief for the new Natural History Museum.' },
+                treeImg: 'images/tree.gif'
+            },
+            {
+                id: 'botanical',
+                tab: 'Botanical Art',
+                title: 'The Botanical Art Collection',
+                body: `Before photography, the only way to record a plant specimen in full colour was to paint it. The Natural History Museum's collection of botanical illustrations is one of the finest in the world, spanning five centuries of artistic and scientific endeavour.\n\nThe archives include works by some of the most celebrated botanical artists in history, from the detailed watercolours of Georg Dionysius Ehret in the 18th century to the meticulous lithographs produced for Curtis's Botanical Magazine. Each illustration serves a dual purpose: as a work of art and as a precise scientific record.\n\nMany of these illustrations were created during expeditions to remote parts of the world, and the archives contain the artists' field notes alongside their finished works. These documents reveal the extraordinary challenges of working in tropical heat, preserving pigments during long sea voyages, and accurately rendering specimens that would wilt within hours of being collected.`,
+                bookLeft: { img: 'images/books/book3.png', title: 'Flora Illustrata', author: 'Georg Ehret', date: '1750', category: 'Botany', desc: 'A selection of watercolour studies from the museum\'s 18th-century botanical art collection.' },
+                bookRight: { img: 'images/books/book4.png', title: 'Curtis\'s Magazine Archives', author: 'John Curtis', date: '1820', category: 'Botany', desc: 'Original lithographic plates and proofs from Curtis\'s Botanical Magazine, 1787–1920.' },
+                treeImg: 'images/tree_static.png'
+            },
+            {
+                id: 'dinosaurs',
+                tab: 'Early Fossils',
+                title: 'Victorian Paleontology',
+                body: `The discovery of the first dinosaur fossils in 19th-century Britain revolutionised our understanding of deep time and the history of life on Earth. The archives contain the original sketches, notes, and correspondence of early pioneers like Richard Owen and Gideon Mantell.\n\nThese documents show not just scientific progress, but intense personal rivalries, public excitement, and the ongoing struggle to piece together the anatomical structure of entirely unknown creatures from scattered fragments of bone.`,
+                bookLeft: { img: 'images/books/book2.png', title: 'Mantell\'s Iguanodon', author: 'Gideon Mantell', date: '1825', category: 'Palaeontology', desc: 'Original sketches of Iguanodon teeth and bones from Gideon Mantell\'s personal diary.' },
+                bookRight: { img: 'images/books/nhm-uk_l_667_9921698302081_barbut_frontcover_m_1col.png', title: 'Fossil Reptiles', author: 'Richard Owen', date: '1842', category: 'Palaeontology', desc: 'Richard Owen\'s comprehensive monograph that first coined the term "Dinosauria".' },
+                treeImg: 'images/tree.gif'
+            },
+            {
+                id: 'minerals',
+                tab: 'Mineralogy',
+                title: 'The Mineral Collection',
+                body: `The Museum’s mineralogy collection is one of the most significant globally, housing specimens that range from everyday quartz to incredibly rare meteorites.\n\nArchival records trace the acquisition of these specimens through royal donations, private purchases, and daring expeditions. The collection also holds profound historical importance for the development of crystallography, providing the physical samples that early scientists used to define the mathematical structure of crystals.`,
+                bookLeft: { img: 'images/books/paper.png', title: 'Crystallography Notes', author: 'William Smith', date: '1815', category: 'Mineralogy', desc: 'Early diagrams outlining the mathematical symmetry of crystal structures.' },
+                bookRight: { img: 'images/books/book3.png', title: 'The Meteorite Catalogue', author: 'Richard Owen', date: '1885', category: 'Mineralogy', desc: 'Handwritten ledgers tracking the origin and weight of extraterrestrial rock falls.' },
+                treeImg: 'images/tree_static.png'
+            },
+            {
+                id: 'entomology',
+                tab: 'Insect Taxonomy',
+                title: 'Cataloguing the Microcosm',
+                body: `Insects represent the vast majority of terrestrial biodiversity, and the Museum's entomology archives are accordingly massive. They document centuries of effort to classify and understand this staggering variety of life.\n\nThe archives include exquisite microscopic illustrations of insect anatomy, field notes from the tropics recording complex behaviours and mimicry, and the foundational taxonomic texts that established the framework we still use to identify species today.`,
+                bookLeft: { img: 'images/books/book4.png', title: 'Lepidoptera of the World', author: 'Mary Anning', date: '1830', category: 'Entomology', desc: 'A stunning visual index of global butterfly and moth species.' },
+                bookRight: { img: 'images/books/book2.png', title: 'Beetle Anatomy', author: 'John Curtis', date: '1840', category: 'Entomology', desc: 'Detailed ink drawings showing the intricate joint structures of various Coleoptera.' },
+                treeImg: 'images/tree.gif'
+            },
+            {
+                id: 'oceanography',
+                tab: 'Deep Sea Exploration',
+                title: 'The Challenger Expedition',
+                body: `The HMS Challenger expedition (1872–1876) laid the foundation for modern oceanography. The archives house the vast quantities of data, illustrations, and specimen records generated during this unprecedented global voyage.\n\nScientists aboard the Challenger dredged the ocean floor at depths previously thought to be lifeless, bringing up bizarre and wonderful creatures. The archives capture the excitement of these discoveries and the painstaking process of preserving and cataloguing them at sea.`,
+                bookLeft: { img: 'images/books/book3.png', title: 'Challenger Logbooks', author: 'Charles Darwin', date: '1876', category: 'Oceanography', desc: 'Daily records of weather, soundings, and biological dredging results.' },
+                bookRight: { img: 'images/books/paper.png', title: 'Creatures of the Abyss', author: 'Richard Owen', date: '1880', category: 'Oceanography', desc: 'First sketches of deep-sea marine life brought to the surface by the Challenger.' },
+                treeImg: 'images/tree_static.png'
+            },
+            {
+                id: 'mammals',
+                tab: 'Mammal Evolution',
+                title: 'Tracing Mammal Lineages',
+                body: `Detailed notes on early mammal evolution and the divergence of species across the continents.`,
+                bookLeft: { img: 'images/books/book2.png', title: 'Monograph on Marsupials', author: 'Charles Darwin', date: '1871', category: 'Zoology', desc: 'A seminal work exploring the evolution of marsupial species in Australasia.' },
+                bookRight: { img: 'images/books/book3.png', title: 'The Descent of Mammalia', author: 'Richard Owen', date: '1875', category: 'Zoology', desc: 'A comparative study of skeletal structures in modern and extinct mammals.' },
+                treeImg: 'images/tree.gif'
+            },
+            {
+                id: 'birds',
+                tab: 'Avian Studies',
+                title: 'The Study of Birds',
+                body: `Archival records of ornithological discoveries and the classification of avian species.`,
+                bookLeft: { img: 'images/books/paper.png', title: 'Fauna: Aves', author: 'John Curtis', date: '1845', category: 'Zoology', desc: 'An illustrated guide to the bird species of the British Isles.' },
+                bookRight: { img: 'images/books/nhm-uk_l_667_9921698302081_barbut_frontcover_m_1col.png', title: 'Birds of Passage', author: 'Alfred Russel Wallace', date: '1869', category: 'Zoology', desc: 'Observations on migratory patterns of birds in the Malay Archipelago.' },
+                treeImg: 'images/tree_static.png'
+            },
+            {
+                id: 'reptiles',
+                tab: 'Reptile Biology',
+                title: 'Reptiles of the World',
+                body: `Historical accounts of reptile classification and the study of ancient lizard lineages.`,
+                bookLeft: { img: 'images/books/book4.png', title: 'Mesozoic Reptiles', author: 'Gideon Mantell', date: '1833', category: 'Palaeontology', desc: 'Sketches and descriptions of fossilized reptile remains found in Southern England.' },
+                bookRight: { img: 'images/books/book2.png', title: 'Herpetological Notes', author: 'Richard Owen', date: '1855', category: 'Zoology', desc: 'Field notes on the anatomy and classification of living reptiles.' },
+                treeImg: 'images/tree.gif'
+            },
+            {
+                id: 'meteorites',
+                tab: 'Meteorites',
+                title: 'Meteorites from Space',
+                body: `Records of extraterrestrial rock falls and the chemical composition of meteorites.`,
+                bookLeft: { img: 'images/books/book4.png', title: 'Catalogue of Meteorites', author: 'William Smith', date: '1882', category: 'Mineralogy', desc: 'A complete inventory of the museum\'s meteorite collection, tracking origins and weights.' },
+                bookRight: { img: 'images/books/book2.png', title: 'Extraterrestrial Rocks', author: 'Richard Owen', date: '1888', category: 'Mineralogy', desc: 'Scientific analysis of the mineral properties of meteorite specimens.' },
+                treeImg: 'images/tree_static.png'
+            }
+        ];
+
+        // --- Load Custom Published Stories ---
+        try {
+            const rawCustom = localStorage.getItem('cargo_custom_stories');
+            if (rawCustom) {
+                const customStories = JSON.parse(rawCustom);
+                customStories.forEach(cs => {
+                    stories.push(cs);
+                });
+            }
+        } catch(e) {
+            console.error("Failed to load custom stories:", e);
+        }
+
+        let activeStoryIndex = 0;
+
+        // ==========================================
+        // BUILD TABS
+        // ==========================================
+        const selectorEl = document.getElementById('story-selector');
+        stories.forEach((story, i) => {
+            const tab = document.createElement('div');
+            tab.className = 'story-tab' + (i === 0 ? ' active' : '');
+            
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = story.tab;
+            tab.appendChild(titleSpan);
+
+            // Double click to show delete (only for custom stories)
+            if (story.id && story.id.startsWith('custom-')) {
+                const delBtn = document.createElement('span');
+                delBtn.textContent = ' ✕';
+                delBtn.className = 'story-delete-btn';
+                delBtn.style.display = 'none';
+                delBtn.style.color = '#d9534f';
+                delBtn.style.cursor = 'pointer';
+                delBtn.style.marginLeft = '10px';
+                delBtn.style.pointerEvents = 'auto'; // ensure click fires
+                
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // prevent switching story
+                    deleteStory(story.id);
+                });
+
+                tab.appendChild(delBtn);
+
+                tab.addEventListener('dblclick', () => {
+                    delBtn.style.display = delBtn.style.display === 'none' ? 'inline' : 'none';
+                });
+            }
+
+            tab.addEventListener('click', () => switchStory(i));
+            selectorEl.appendChild(tab);
+        });
+
+        function deleteStory(id) {
+            const rawCustom = localStorage.getItem('cargo_custom_stories');
+            if (rawCustom) {
+                let customStories = JSON.parse(rawCustom);
+                customStories = customStories.filter(s => s.id !== id);
+                localStorage.setItem('cargo_custom_stories', JSON.stringify(customStories));
+                window.location.reload(); 
+            }
+        }
+
+        // ==========================================
+        // SWITCH STORY
+        // ==========================================
+        function switchStory(index) {
+            if (index === activeStoryIndex) return;
+            activeStoryIndex = index;
+
+            // Update tabs
+            document.querySelectorAll('.story-tab').forEach((t, i) => {
+                t.classList.toggle('active', i === index);
+            });
+
+            // Fade out
+            const stage = document.getElementById('center-stage');
+            stage.classList.add('fading');
+
+            setTimeout(() => {
+                loadStory(stories[index]);
+                stage.classList.remove('fading');
+            }, 280);
+        }
+
+        const plantImages = ['images/planpix.png', 'images/plantpix2.png', 'images/plantpix3.png'];
+        const availableBooks = [
+            { img: 'images/books/book2.png', title: 'Monograph on Cetaceans', author: 'Richard Owen', date: '1894', category: 'Zoology', desc: 'A detailed anatomical study of marine mammals.' },
+            { img: 'images/books/book3.png', title: 'Botany of the Voyage', author: 'Charles Darwin', date: '1872', category: 'Botany', desc: 'Field observations and illustrations of exotic plant life.' },
+            { img: 'images/books/book4.png', title: 'Palaeontology Memoirs', author: 'Gideon Mantell', date: '1833', category: 'Palaeontology', desc: 'Early records of dinosaur fossil discoveries in England.' },
+            { img: 'images/books/paper.png', title: 'Lepidoptera Catalog', author: 'John Curtis', date: '1840', category: 'Entomology', desc: 'A taxonomic index of butterfly and moth species.' },
+            { img: 'images/books/nhm-uk_l_667_9921698302081_barbut_frontcover_m_1col.png', title: 'Mineralogical Surveys', author: 'William Smith', date: '1815', category: 'Mineralogy', desc: 'Systematic classification of minerals and crystal structures.' }
+        ];
+
+        // ==========================================
+        // LOAD STORY CONTENT
+        // ==========================================
+        function loadStory(story) {
+            document.getElementById('story-title').textContent = story.title;
+            document.getElementById('story-body').textContent = story.body;
+            
+            const authorEl = document.getElementById('story-author-display');
+            if (story.author) {
+                authorEl.textContent = 'By ' + story.author;
+                authorEl.style.display = 'block';
+            } else {
+                authorEl.style.display = 'none';
+            }
+            
+            const stageLeft = document.getElementById('stage-left');
+            
+            // Remove old books
+            stageLeft.querySelectorAll('.book-popup').forEach(b => b.remove());
+            
+            // Set random plant image
+            const plantImg = document.getElementById('plant-image');
+            plantImg.classList.remove('revealed');
+            plantImg.src = plantImages[Math.floor(Math.random() * plantImages.length)];
+            
+            // Collect the books for this story
+            let books = [];
+            let isCustom = story.id && story.id.startsWith('custom-');
+
+            if (isCustom) {
+                // For custom stories, only use workspace books
+                let sourceBooks = story.workspaceBooks || [];
+                
+                // Fallback for older custom stories
+                if (sourceBooks.length === 0) {
+                    if (story.bookLeft) sourceBooks.push(story.bookLeft);
+                    if (story.bookRight) sourceBooks.push(story.bookRight);
+                }
+                
+                // Filter out broken workspace data
+                sourceBooks = sourceBooks.filter(b => b);
+
+                books = sourceBooks.map(b => {
+                    const randomAvail = availableBooks[Math.floor(Math.random() * availableBooks.length)];
+                    return {
+                        title: b.title || 'Untitled',
+                        author: b.author || 'Unknown',
+                        date: b.year || b.date || 'Unknown',
+                        category: b.category || 'Uncategorized',
+                        desc: b.desc || 'No description available.',
+                        img: b.img || randomAvail.img
+                    };
+                });
+            } else {
+                // Default stories: assigned books + random books
+                if (story.bookLeft) books.push(story.bookLeft);
+                if (story.bookRight) books.push(story.bookRight);
+                
+                const numBooks = Math.floor(Math.random() * 5) + 2;
+                for (let i = 0; i < numBooks; i++) {
+                    books.push(availableBooks[Math.floor(Math.random() * availableBooks.length)]);
+                }
+            }
+            
+            // Absolutely strictly remove any book that somehow lacks a title or image
+            books = books.filter(b => b && b.title && b.img && b.title !== 'undefined');
+            
+            // Define 6 safe slots around the plant to prevent overlapping
+            const slots = [
+                { left: 5, bottom: 65 },
+                { left: -10, bottom: 35 },
+                { left: 15, bottom: 5 },
+                { left: 75, bottom: 65 },
+                { left: 90, bottom: 35 },
+                { left: 70, bottom: 5 }
+            ];
+            
+            // Shuffle slots array
+            for (let i = slots.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [slots[i], slots[j]] = [slots[j], slots[i]];
+            }
+            
+            const spawnedBooks = [];
+            // Place books into slots
+            for (let i = 0; i < Math.min(books.length, slots.length); i++) {
+                const bookData = books[i];
+                if (!bookData) continue; 
+                
+                const bookEl = document.createElement('div');
+                bookEl.className = 'book-popup';
+                
+                const slot = slots[i];
+                // Tiny random jitter so they aren't perfectly rigid
+                const jitterX = (Math.random() - 0.5) * 8;
+                const jitterY = (Math.random() - 0.5) * 8;
+                
+                bookEl.style.left = (slot.left + jitterX) + '%';
+                bookEl.style.bottom = (slot.bottom + jitterY) + '%';
+                bookEl.style.zIndex = Math.floor(Math.random() * 5); 
+                
+                // Set data for lightbox
+                bookEl.dataset.img = bookData.img;
+                bookEl.dataset.title = bookData.title;
+                bookEl.dataset.author = bookData.author;
+                bookEl.dataset.date = bookData.date;
+                bookEl.dataset.category = bookData.category;
+                bookEl.dataset.desc = bookData.desc;
+                
+                bookEl.innerHTML = `
+                    <div class="wave-container" style="background-image: url('${bookData.img}');">
+                        <div class="node-meta">
+                            <div class="node-title">${bookData.title}</div>
+                            <div class="node-author">By ${bookData.author}</div>
+                            <div class="node-date">${bookData.date}</div>
+                            <div class="node-category">${bookData.category}</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add info panel for expanded state
+                const infoPanel = document.createElement('div');
+                infoPanel.className = 'book-info-panel';
+                infoPanel.innerHTML = `
+                    <div class="info-desc">${bookData.desc}</div>
+                    <a href="mailto:?subject=Archive Specimen&body=I would like to see more information about: ${encodeURIComponent(bookData.title)}" class="info-archive-link" onclick="event.stopPropagation()">see me in the archive</a>
+                `;
+                bookEl.appendChild(infoPanel);
+                
+                bookEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const wasExpanded = bookEl.classList.contains('expanded');
+                    
+                    // Close any other expanded books
+                    document.querySelectorAll('.book-popup.expanded').forEach(b => {
+                        b.classList.remove('expanded');
+                    });
+                    
+                    if (!wasExpanded) {
+                        bookEl.classList.add('expanded');
+                    }
+                });
+                
+                stageLeft.appendChild(bookEl);
+                spawnedBooks.push(bookEl);
+            }
+            
+            // Trigger animations after a tiny delay
+            setTimeout(() => {
+                plantImg.classList.add('revealed');
+                spawnedBooks.forEach((book, idx) => {
+                    setTimeout(() => {
+                        book.classList.add('revealed');
+                    }, 150 + (idx * 200)); // Staggered delay for each book
+                });
+            }, 50);
+        }
+
+        // Close expanded books when clicking anywhere else
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.book-popup.expanded').forEach(b => {
+                b.classList.remove('expanded');
+            });
+        });
+
+        // Load initial story
+        loadStory(stories[0]);
+
+        // Lightbox code removed.
+    });
+    </script>
+    <script src="scripts/custom-cursor.js?v=3"></script>
+    <script src="scripts/email-popup.js?v=1"></script>
+    <script src="scripts/story-popup.js?v=2"></script>
+</body>
+</html>

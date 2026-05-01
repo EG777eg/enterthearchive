@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub Image Diagnostic</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.5; }
+        .error { color: #d32f2f; background: #ffebee; padding: 10px; margin: 10px 0; border-left: 5px solid #d32f2f; }
+        .success { color: #2e7d32; background: #e8f5e9; padding: 10px; margin: 10px 0; border-left: 5px solid #2e7d32; }
+        code { background: #eee; padding: 2px 4px; border-radius: 3px; }
+        h2 { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Image Diagnostic Tool</h1>
+    <p>This page checks if your images are reachable on GitHub. If you see Red boxes, those images are missing or named incorrectly.</p>
+
+    <div id="results">Checking images...</div>
+
+    <script>
+        const imagesToCheck = [
+            'images/back.png',
+            'images/back2.png',
+            'images/wall.png',
+            'images/wallbottom.png',
+            'images/logo.png',
+            'images/colr.png',
+            'images/coll.png',
+            'images/colrcol.png',
+            'images/columback.png',
+            'images/plants1.png',
+            'images/plants3.png',
+            'images/archl.png',
+            'images/archr.png',
+            'images/box.png',
+            'images/shelf.png',
+            'images/storypop.png',
+            'images/mouse.png',
+            'images/lady.gif',
+            'images/beetle.gif',
+            'images/tree.gif',
+            'images/tree_static.png',
+            'images/adobe_scan_13_mar.png',
+            'images/entrance_trigger.png',
+            'images/pano/street_view_360.jpg',
+            'images/books/book2.png',
+            'images/books/book3.png',
+            'images/books/book4.png',
+            'images/books/paper.png',
+            'images/books/nhm-uk_l_667_9921698302081_barbut_frontcover_m_1col.png'
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '';
+
+        let completed = 0;
+        let failedCount = 0;
+
+        imagesToCheck.forEach(src => {
+            const img = new Image();
+            img.onload = () => {
+                const div = document.createElement('div');
+                div.className = 'success';
+                div.innerHTML = `✅ Found: <code>${src}</code>`;
+                resultsDiv.appendChild(div);
+                checkDone();
+            };
+            img.onerror = () => {
+                const div = document.createElement('div');
+                div.className = 'error';
+                div.innerHTML = `❌ MISSING: <code>${src}</code><br><small>Check if the file exists in the 'images' folder and has the exact same casing.</small>`;
+                resultsDiv.appendChild(div);
+                failedCount++;
+                checkDone();
+            };
+            img.src = src;
+        });
+
+        function checkDone() {
+            completed++;
+            if (completed === imagesToCheck.length) {
+                const summary = document.createElement('h2');
+                summary.textContent = failedCount === 0 
+                    ? "🎉 All images found! If they still don't show on the site, try a Hard Refresh (Cmd+Shift+R)."
+                    : `⚠️ ${failedCount} images are missing. Please double-check their names on GitHub.`;
+                resultsDiv.insertBefore(summary, resultsDiv.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

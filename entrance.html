@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrance Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+
+    <!-- USER CSS -->
+    <style>
+        [id="L3482832595"].page {
+            background-color: #d5a388;
+        }
+
+        [id="L3482832595"] .page-content {
+            padding: 0.0rem;
+        }
+
+        /* 
+         * NOTE: Because Cargo's custom <media-item> elements need Cargo's servers 
+         * to fetch the actual image URLs based on the "hash", they'll be invisible locally.
+         * I've added a temporary placeholder style here so you can see them and click them!
+         * To show actual images offline, we'd need to replace these with standard <img> tags.
+         */
+        media-item {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.4);
+            border: 2px dashed #fff;
+            width: 200px;
+            height: 200px;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        media-item:hover {
+            background: rgba(255, 255, 255, 0.7);
+            transform: scale(1.05);
+        }
+
+        .zoomable {
+            cursor: default !important;
+        }
+
+        body {
+            /* Fallback body color if ID doesn't apply immediately */
+            background-color: #d5a388; 
+            margin: 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Cargo Column Shim */
+        column-set {
+            display: grid; grid-template-columns: repeat(12, 1fr);
+            gap: 1rem; width: 100%;
+        }
+        column-unit { grid-column: span 1; }
+        column-unit[span="2"] { grid-column: span 2; }
+        column-unit[span="3"] { grid-column: span 3; }
+        column-unit[span="4"] { grid-column: span 4; }
+        column-unit[span="6"] { grid-column: span 6; }
+        column-unit[span="12"] { grid-column: span 12; }
+        
+        /* Perfect Centering */
+        column-unit {
+            text-align: center;
+        }
+
+        /* Spinning Animation */
+        @keyframes spinClockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        #entrance-trigger {
+            animation: spinClockwise 100s linear infinite;
+            cursor: pointer;
+        }
+    </style>
+    <link rel="stylesheet" href="styles/custom-cursor.css">
+</head>
+<body id="L3482832595" class="page">
+    <div class="page-content">
+        <!-- USER HTML CONTENT -->
+        <column-set gutter="1">
+            <column-unit slot="0" span="4">
+                <img class="cargo-img zoomable" src="images/archl.png" style="width: 100%;" />
+            </column-unit>
+            
+            <column-unit slot="1" span="4">
+                <div style="margin-top: 30vh;">
+                    <div id="entrance-trigger-wrap" style="display: inline-block;">
+                        <img class="cargo-img linked" id="entrance-trigger" src="images/entrance_trigger.png" style="width: 61.9%;" />
+                    </div>
+                </div>
+            </column-unit>
+            
+            <column-unit slot="2" span="4">
+                <img class="cargo-img zoomable" src="images/archr.png" style="width: 99.3%" />
+                <br><br><br><br>
+            </column-unit>
+        </column-set>
+    </div>
+
+    <script>
+        document.addEventListener('click', function(e) {
+            const clickedImg = e.target.closest('#entrance-trigger');
+            if (clickedImg) {
+                // 1. Tell Master Shell to play audio
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage('play-audio', '*');
+                }
+                
+                // 2. Delay navigation slightly
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 100); 
+            }
+        }, true);  
+    </script>
+
+    <!-- LOADER SCREEN -->
+    <script>
+    (function() {
+        const loaderBackgroundColor = "#D5A388"; 
+        const pngUrls = [
+            "https://freight.cargo.site/w/274/i/C2890624650248906807715564047067/snowflake17.png", 
+            "https://freight.cargo.site/w/274/i/H2890624650230460063641854495451/snowflake16.png", 
+            "https://freight.cargo.site/w/274/i/F2890624650212013319568144943835/snowflake15.png", 
+            "https://freight.cargo.site/w/274/i/F2890624650193566575494435392219/snowflake14.png",
+            "https://freight.cargo.site/w/274/i/X2890624650175119831420725840603/snowflake13.png", 
+            "https://freight.cargo.site/w/274/i/F2890624650156673087347016288987/snowflake12.png", 
+            "https://freight.cargo.site/w/274/i/K2890624650138226343273306737371/snowflake11.png", 
+            "https://freight.cargo.site/w/274/i/K2890624650119779599199597185755/snowflake10.png",
+            "https://freight.cargo.site/w/274/i/P2890624650101332855125887634139/snowflake9.png", 
+            "https://freight.cargo.site/w/274/i/X2890624650082886111052178082523/snowflake8.png", 
+            "https://freight.cargo.site/w/274/i/Q2890624650064439366978468530907/snowflake7.png", 
+            "https://freight.cargo.site/w/274/i/J2890624650045992622904758979291/snowflake6.png",
+            "https://freight.cargo.site/w/274/i/C2890624650027545878831049427675/snowflake5.png", 
+            "https://freight.cargo.site/w/274/i/L2890645299737137102998448065243/snowflake3.png", 
+            "https://freight.cargo.site/w/274/i/U2890666217201218557059988409051/nhma.png",
+            "https://freight.cargo.site/w/274/i/T2890624650009099134757339876059/snowflake2.png" 
+        ];
+
+        if (!document.getElementById("cargo-loader-styles")) {
+            const style = document.createElement("style");
+            style.id = "cargo-loader-styles";
+            style.innerHTML = `
+                #cargo-loading-overlay {
+                    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                    z-index: 99999999; display: flex; justify-content: center; align-items: center;
+                    transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
+                    visibility: visible; opacity: 1;
+                }
+                #cargo-loading-overlay.fade-out {
+                    opacity: 0; visibility: hidden; pointer-events: none;
+                }
+                .cargo-loader-grid {
+                    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); 
+                    gap: 2vmin; width: 100vw; height: 100vh; padding: 5vh 5vw; box-sizing: border-box; 
+                }
+                .cargo-grid-image {
+                    width: 100%; height: 100%; object-fit: contain; opacity: 0; transform: scale(0.9);
+                    transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+                }
+                .cargo-grid-image.pop-in { opacity: 1; transform: scale(1); }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        function shuffleArray(array) {
+            let cur = array.length, rand;
+            while (cur !== 0) {
+                rand = Math.floor(Math.random() * cur); cur--;
+                [array[cur], array[rand]] = [array[rand], array[cur]];
+            }
+            return array;
+        }
+
+        let isAnimating = false;
+        function runAnimation() {
+            if (isAnimating) return;
+            isAnimating = true;
+            document.querySelectorAll("#cargo-loading-overlay").forEach(o => o.remove());
+            
+            const overlayNode = document.createElement("div");
+            overlayNode.id = "cargo-loading-overlay";
+            overlayNode.style.backgroundColor = loaderBackgroundColor;
+            
+            const gridContainer = document.createElement("div");
+            gridContainer.className = "cargo-loader-grid";
+            overlayNode.appendChild(gridContainer);
+            document.documentElement.appendChild(overlayNode);
+            
+            const randomizedUrls = shuffleArray([...pngUrls]);
+            const imageElements = [];
+            
+            randomizedUrls.forEach(url => {
+                const img = document.createElement("img");
+                img.src = url;
+                img.className = "cargo-grid-image";
+                gridContainer.appendChild(img);
+                imageElements.push(img);
+            });
+            
+            const temporallyShuffled = shuffleArray([...imageElements]);
+            const appearDuration = 2000; 
+            const interval = appearDuration / temporallyShuffled.length;
+            
+            temporallyShuffled.forEach((img, index) => {
+                setTimeout(() => { if (img) img.classList.add("pop-in"); }, index * interval);
+            });
+            
+            setTimeout(() => {
+                if (overlayNode) overlayNode.classList.add("fade-out");
+                setTimeout(() => {
+                    if (overlayNode) overlayNode.remove();
+                    isAnimating = false;
+                }, 800);
+            }, appearDuration + 600);
+        }
+
+        // runAnimation(); // Disabled immediate run on entrance to match original feel
+
+        if (!window.cargoLoaderRunning) {
+            window.cargoLoaderRunning = true;
+            document.addEventListener("click", function(e) {
+                let link = e.target.closest("a");
+                if (!link) return;
+                // Basic local navigation check
+                if (link.target !== "_blank" && (link.href.startsWith(window.location.origin) || link.href.startsWith("file://"))) {
+                    const linkUrl = new URL(link.href);
+                    if (linkUrl.pathname !== window.location.pathname) { 
+                        runAnimation();
+                    }
+                }
+            }, true); 
+            window.addEventListener("popstate", () => {
+                runAnimation();
+            });
+        }
+    })();
+    </script>
+    <script src="scripts/custom-cursor.js?v=3"></script>
+</body>
+</html>

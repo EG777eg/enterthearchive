@@ -1,0 +1,33 @@
+/* styles/custom-cursor.css */
+* {
+    cursor: none !important;
+}
+
+#custom-cursor-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 999999999; /* highest z-index */
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    width: 60px; /* space for gradient */
+    height: 60px;
+    background: transparent;
+    transition: background 0.3s ease;
+}
+
+#custom-cursor-container.hover-active {
+    /* white gradient behind the mouse when hovering over clickable */
+    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 65%);
+}
+
+#custom-cursor-image {
+    width: 32px; /* size of a mouse */
+    height: 32px;
+    object-fit: contain;
+}
+

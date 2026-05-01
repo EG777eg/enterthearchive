@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explore — NHM Archives</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/custom-cursor.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body, html {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'IBM Plex Mono', monospace;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    canvas#gl {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: none !important; /* ensure custom cursor shows over canvas */
+    }
+
+    /* Bug crawlers */
+    #bug-crawler, #beetle-crawler {
+      position: fixed;
+      z-index: 999999;
+      pointer-events: auto;
+      cursor: none;
+      transform-origin: center center;
+      image-rendering: pixelated;
+    }
+    #bug-crawler   { width: 72px;  height: 72px; }
+    #beetle-crawler { width: 108px; height: 108px; }
+
+    /* Loading screen */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #d5a388;
+      transition: opacity 0.8s ease;
+    }
+    #loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loader-label {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,0.5);
+      margin-bottom: 20px;
+    }
+    .loader-bar-wrap {
+      width: 180px; height: 1px;
+      background: rgba(0,0,0,0.15);
+    }
+    .loader-bar {
+      height: 100%; width: 0%;
+      background: rgba(0,0,0,0.4);
+      transition: width 0.3s ease;
+    }
+
+    /* UI */
+    #ui { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+
+    #back-btn {
+      position: absolute; top: 5px; left: 5px;
+      pointer-events: auto;
+      z-index: 9999;
+      transition: transform 0.2s;
+    }
+    #back-btn img {
+      width: 60px;
+      height: auto;
+      display: block;
+    }
+    #back-btn:hover { transform: scale(1.05); }
+
+    .nav-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      pointer-events: auto;
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(213, 163, 136, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      color: #1a1a1a;
+    }
+    .nav-arrow:hover { background: rgba(213,163,136,0.97); }
+    #prev-btn { left: 22px; }
+    #prev-btn:hover { transform: translateY(-50%) translateX(-2px); }
+    #next-btn { right: 22px; }
+    #next-btn:hover { transform: translateY(-50%) translateX(2px); }
+    .nav-arrow svg { width: 18px; height: 18px; }
+
+    #hint, #hint2 {
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      white-space: nowrap;
+    }
+    #hint {
+      animation: hintFade 4s ease 1.5s both;
+    }
+    #hint2 {
+      animation: hintFade 5.5s ease 6.5s both;
+    }
+    @keyframes hintFade {
+      0%   { opacity:0; transform: translateX(-50%) translateY(6px); }
+      20%  { opacity:1; transform: translateX(-50%) translateY(0); }
+      70%  { opacity:1; }
+      100% { opacity:0; }
+    }
+
+    #pano-label {
+      position: absolute; top: 28px; right: 28px;
+      font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+    }
+  </style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-label">Loading panorama</div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="bar"></div></div>
+</div>
+
+<canvas id="gl"></canvas>
+
+<div id="ui">
+  <a href="home.html" id="back-btn"><img src="images/back2.png" alt="Back" /></a>
+  <div id="pano-label"></div>
+  <div id="hint">Drag to look around · Scroll to zoom</div>
+  <div id="hint2">CLICK A BUG 5 TIMES TO MESMERISE IT!</div>
+  <button id="prev-btn" class="nav-arrow" onclick="prevPano()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button id="next-btn" class="nav-arrow" onclick="nextPano()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+</div>
+
+<script>
+// ─── Panorama list ────────────────────────────────────────────
+const PANOS = [
+  'images/pano/street_view_360.jpg',
+  'images/pano/street_view_3602.jpg',
+  'images/pano/street_view_3603.jpg',
+  'images/pano/street_view_3604.jpg',
+  'images/pano/street_view_3605.jpg',
+  'images/pano/street_view_3606.jpg',
+  'images/pano/street_view_3607.jpg',
+  'images/pano/street_view_3608.jpg',
+  'images/pano/street_view_3609.jpg',
+  'images/pano/street_view_36010.jpg',
+];
+let currentIdx = -1;
+
+// ─── WebGL setup ──────────────────────────────────────────────
+const canvas = document.getElementById('gl');
+let gl;
+try {
+  gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+} catch (e) {
+  console.error("Context creation failed", e);
+}
+
+if (!gl) {
+  const loader = document.getElementById('loader');
+  if (loader) {
+    loader.querySelector('.loader-label').innerHTML = 
+      '<b>WebGL Not Supported</b><br>Your browser or hardware has WebGL disabled.<br>Try using Chrome or Safari.';
+    loader.classList.remove('hidden');
+  }
+} else {
+
+
+// Vertex shader: full-screen quad
+const vsSource = `
+  attribute vec2 a_pos;
+  void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+`;
+
+// Fragment shader: equirectangular panorama ray-cast
+const fsSource = `
+  precision mediump float;
+  uniform sampler2D u_tex;
+  uniform vec2 u_res;
+  uniform float u_lon;   // yaw in radians
+  uniform float u_lat;   // pitch in radians
+  uniform float u_fov;   // vertical fov in radians
+
+  const float PI = 3.14159265358979;
+
+  void main() {
+    // Normalised pixel coords -1..1
+    vec2 uv = (gl_FragCoord.xy / u_res) * 2.0 - 1.0;
+    uv.x *= u_res.x / u_res.y; // correct for aspect ratio
+
+    // Convert pixel to view ray using vertical FOV
+    float f = 1.0 / tan(u_fov * 0.5);
+    vec3 ray = normalize(vec3(uv.x, uv.y, f));
+
+    // Rotate by lat (pitch) around X axis
+    float cosLat = cos(-u_lat), sinLat = sin(-u_lat);
+    vec3 ray2 = vec3(
+      ray.x,
+      ray.y * cosLat - ray.z * sinLat,
+      ray.y * sinLat + ray.z * cosLat
+    );
+
+    // Rotate by lon (yaw) around Y axis
+    float cosLon = cos(u_lon), sinLon = sin(u_lon);
+    vec3 ray3 = vec3(
+      ray2.x * cosLon + ray2.z * sinLon,
+      ray2.y,
+     -ray2.x * sinLon + ray2.z * cosLon
+    );
+
+    // Convert ray to equirectangular UV
+    float longitude = atan(ray3.x, ray3.z);           // -PI..PI
+    float latitude  = asin(clamp(ray3.y, -1.0, 1.0)); // -PI/2..PI/2
+
+    float s = fract(longitude / (2.0 * PI) + 0.5);
+    float t = latitude  / PI + 0.5;
+
+    gl_FragColor = texture2D(u_tex, vec2(s, t));
+  }
+`;
+
+function compileShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(sh));
+  }
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, compileShader(gl.VERTEX_SHADER,   vsSource));
+gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fsSource));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+// Full-screen quad
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+  -1,-1,  1,-1,  -1,1,
+   1,-1,  1, 1,  -1,1
+]), gl.STATIC_DRAW);
+
+const aPos = gl.getAttribLocation(prog, 'a_pos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+// Uniforms
+const uTex = gl.getUniformLocation(prog, 'u_tex');
+const uRes = gl.getUniformLocation(prog, 'u_res');
+const uLon = gl.getUniformLocation(prog, 'u_lon');
+const uLat = gl.getUniformLocation(prog, 'u_lat');
+const uFov = gl.getUniformLocation(prog, 'u_fov');
+
+// Texture
+const texture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture);
+// placeholder 1x1 pixel while image loads
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+  new Uint8Array([50, 30, 20, 255]));
+
+// ─── Camera state ─────────────────────────────────────────────
+let lon = 0, lat = 0;
+let lonVel = 0, latVel = 0;
+let fovDeg = 75;
+const LAT_MAX = 85 * Math.PI / 180;
+const INERTIA = 0.90;
+
+// ─── Resize ───────────────────────────────────────────────────
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ─── Image loading ────────────────────────────────────────────
+function loadPano(url) {
+  const loader = document.getElementById('loader');
+  const bar    = document.getElementById('bar');
+  
+  // Check for file:// protocol immediately
+  if (window.location.protocol === 'file:') {
+    const label = document.getElementById('loader').querySelector('.loader-label');
+    if (label) {
+      label.innerHTML = `
+        <div style="color: #8b0000; font-weight: bold; margin-bottom: 10px;">LOCAL FILE DETECTED</div>
+        Browsers block 3D panoramas when opened as a file.<br><br>
+        Please use the <b>http://localhost:8000</b> link<br>after starting the terminal server.
+      `;
+    }
+  }
+
+  const isFirstLoad = !loader.classList.contains('hidden');
+  let fakeTimer = null;
+
+  if (isFirstLoad) {
+      // Animated bar for the initial load only
+      let fake = 0;
+      fakeTimer = setInterval(() => {
+        fake = Math.min(fake + 7, 85);
+        bar.style.width = fake + '%';
+      }, 120);
+  }
+
+  window.onerror = (msg, url, line) => {
+    const label = loader.querySelector('.loader-label');
+    if (label) label.innerHTML = `Error: ${msg}<br>Line: ${line}`;
+  };
+
+  const img = new Image();
+  // We do NOT set crossOrigin for file:// URLs as it will always fail.
+  // Instead we rely on the browser's default behavior and catch the 'tainted' error in the try/catch block.
+
+  img.onload = () => {
+    clearInterval(fakeTimer);
+    bar.style.width = '100%';
+
+    try {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        
+        // This is where the security error usually happens on file://
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        // Label
+        const name = url.split('/').pop().replace('.jpg','').replace(/_/g,' ');
+        document.getElementById('pano-label').textContent = name;
+
+        setTimeout(() => loader.classList.add('hidden'), 300);
+    } catch (e) {
+        console.error("WebGL Texture Error:", e);
+        loader.querySelector('.loader-label').innerHTML = 
+            '<b>Security Blocked:</b> Local browsers often block 3D textures for security.<br><br>' +
+            'To fix this, please run a local server or upload the files to Cargo.<br>' +
+            '<small>On Mac, you can run: <code>python3 -m http.server 8000</code> in this folder.</small>';
+    }
+  };
+
+  img.onerror = () => {
+    clearInterval(fakeTimer);
+    console.error('Failed to load:', url);
+    loader.querySelector('.loader-label').textContent = 'Failed to load image: ' + url;
+  };
+
+  img.src = url;
+}
+
+function nextPano() {
+  currentIdx = (currentIdx + 1) % PANOS.length;
+  lonVel = 0; latVel = 0;
+  loadPano(PANOS[currentIdx]);
+}
+
+function prevPano() {
+  currentIdx = (currentIdx - 1 + PANOS.length) % PANOS.length;
+  lonVel = 0; latVel = 0;
+  loadPano(PANOS[currentIdx]);
+}
+
+// ─── Input ────────────────────────────────────────────────────
+let dragging = false, px = 0, py = 0;
+
+canvas.addEventListener('mousedown', e => {
+  dragging = true; px = e.clientX; py = e.clientY;
+  lonVel = 0; latVel = 0;
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - px, dy = e.clientY - py;
+  lonVel =  dx * 0.003;
+  latVel = -dy * 0.003;
+  lon -= lonVel; lat -= latVel;
+  lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, lat));
+  px = e.clientX; py = e.clientY;
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+
+// Touch
+let tx = 0, ty = 0;
+canvas.addEventListener('touchstart', e => { e.preventDefault(); tx = e.touches[0].clientX; ty = e.touches[0].clientY; lonVel=0;latVel=0; }, {passive:false});
+canvas.addEventListener('touchmove',  e => {
+  e.preventDefault();
+  const dx = e.touches[0].clientX - tx, dy = e.touches[0].clientY - ty;
+  lonVel =  dx * 0.003; latVel = -dy * 0.003;
+  lon -= lonVel; lat -= latVel;
+  lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, lat));
+  tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+}, {passive:false});
+
+// Scroll to zoom
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  fovDeg = Math.max(30, Math.min(100, fovDeg + e.deltaY * 0.04));
+}, {passive:false});
+
+// ─── Render loop ──────────────────────────────────────────────
+function render() {
+  requestAnimationFrame(render);
+
+  if (!dragging) {
+    lon -= lonVel; lat -= latVel;
+    lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, lat));
+    lonVel *= INERTIA;
+    latVel *= INERTIA;
+  }
+
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+  gl.uniform1f(uLon, lon);
+  gl.uniform1f(uLat, lat);
+  gl.uniform1f(uFov, fovDeg * Math.PI / 180);
+  gl.uniform1i(uTex, 0);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+render();
+
+// ─── Boot — start on a random pano ──────────────────────────
+currentIdx = Math.floor(Math.random() * PANOS.length) - 1;
+nextPano();
+}
+</script>
+
+<script src="scripts/custom-cursor.js?v=3"></script>
+
+<!-- Explore-only bug system with built-in 5-click follow mode -->
+<script>
+(function() {
+  // ── Shared mouse tracking ──────────────────────────────────
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+  window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+  const CLICKS_NEEDED = 5;
+  const FOLLOW_MS     = 10000;
+
+  // ── Bug factory ───────────────────────────────────────────
+  function createBug({ src, size, margin, startX, startY }) {
+    const el = document.createElement('img');
+    el.src = src;
+    el.style.cssText = `position:fixed;z-index:999999;pointer-events:auto;cursor:none;
+      width:${size}px;height:${size}px;image-rendering:pixelated;transform-origin:center center; top:0; left:0;`;
+    document.body.appendChild(el);
+
+    // ── State ──────────────────────────────────────────────
+    let x = startX, y = startY;
+    let angle = Math.random() * Math.PI * 2;
+    let speed = 1.0, targetSpeed = 1.5;
+    let wanderAngle = 0;
+    let isPaused = false, pauseTimer = 0;
+    let timeSinceTurn = 0;
+
+    let mode = 'onscreen';
+    let exitEdge = null, exitTarget = null;
+    let offTimer = 0, onTimer = 0, spinTimer = 0;
+
+    // Follow-mode state
+    let followMode = false;
+    let followEnd  = 0;
+    let clickCount = 0;
+
+    function resetOnTimer() { onTimer = Math.floor((25 + Math.random() * 30) * 60); }
+    resetOnTimer();
+
+    function spawnOnscreen() {
+      const W = window.innerWidth, H = window.innerHeight;
+      x = margin + Math.random() * (W - margin * 2);
+      y = margin + Math.random() * (H - margin * 2);
+      angle = Math.random() * Math.PI * 2;
+      speed = 1.0; targetSpeed = 1.0 + Math.random() * 1.5;
+      wanderAngle = 0; isPaused = false; timeSinceTurn = 0;
+      resetOnTimer();
+    }
+
+    function chooseExit() {
+      const W = window.innerWidth, H = window.innerHeight;
+      const dists = { right: W - x, left: x, bottom: H - y, top: y };
+      exitEdge = Object.keys(dists).reduce((a,b) => dists[a] < dists[b] ? a : b);
+      if (exitEdge === 'right')  exitTarget = { x: W + size, y };
+      if (exitEdge === 'left')   exitTarget = { x: -size,    y };
+      if (exitEdge === 'bottom') exitTarget = { x, y: H + size };
+      if (exitEdge === 'top')    exitTarget = { x, y: -size };
+      angle = Math.atan2(exitTarget.y - y, exitTarget.x - x);
+      targetSpeed = 1.0 + Math.random() * 0.6;
+      wanderAngle = 0; mode = 'exiting';
+    }
+
+    function enterFromEdge() {
+      const W = window.innerWidth, H = window.innerHeight;
+      const edges = ['top','right','bottom','left'];
+      const entry = edges[Math.floor(Math.random() * edges.length)];
+      const mid = 0.2 + Math.random() * 0.6;
+      if (entry === 'right')  { x = W + size; y = H * mid;  angle = Math.PI; }
+      if (entry === 'left')   { x = -size;    y = H * mid;  angle = 0; }
+      if (entry === 'bottom') { x = W * mid;  y = H + size; angle = -Math.PI / 2; }
+      if (entry === 'top')    { x = W * mid;  y = -size;    angle =  Math.PI / 2; }
+      angle += (Math.random() - 0.5) * 0.4;
+      speed = 1.5 + Math.random() * 0.8; targetSpeed = speed;
+      wanderAngle = 0; isPaused = false; timeSinceTurn = 0;
+      el.style.display = 'block'; mode = 'entering';
+    }
+
+    function steerToward(tx, ty, strength) {
+      const ideal = Math.atan2(ty - y, tx - x);
+      let diff = ideal - angle;
+      while (diff >  Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      angle += diff * strength;
+    }
+
+    // ── Click counter ──────────────────────────────────────
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      if (followMode) {
+        followEnd = performance.now() + FOLLOW_MS; // extend
+        return;
+      }
+      clickCount++;
+
+      if (clickCount >= CLICKS_NEEDED) {
+        // 5th click → follow mode
+        clickCount = 0;
+        followMode = true;
+        followEnd  = performance.now() + FOLLOW_MS;
+        isPaused   = false;
+        el.style.filter = 'drop-shadow(0 0 10px rgba(255,255,255,0.95))';
+      } else {
+        // Every other click → spin (like original behaviour)
+        mode = 'spinning';
+        spinTimer = 3 * 60;
+        targetSpeed = 1.2;
+        isPaused = false;
+      }
+    });
+
+    // ── Tick ───────────────────────────────────────────────
+    function tick() {
+      requestAnimationFrame(tick);
+      const W = window.innerWidth, H = window.innerHeight;
+      const half = size / 2;
+
+      // Check follow mode expiry
+      if (followMode && performance.now() >= followEnd) {
+        followMode = false;
+        el.style.filter = '';
+        mode = 'onscreen';
+        resetOnTimer();
+      }
+
+      // ── Follow mode: bug-like steering toward mouse ─────
+      if (followMode) {
+        // Organic wander noise layered on top of steering
+        wanderAngle += (Math.random() - 0.5) * 0.18;
+        wanderAngle *= 0.80;
+        angle += wanderAngle;
+
+        // Steer toward mouse but not perfectly — leaves room for wander
+        steerToward(mouseX, mouseY, 0.07);
+
+        // Pulsing speed: bugs don't move at constant velocity
+        const t = performance.now() * 0.002;
+        targetSpeed = 1.6 + Math.sin(t) * 0.5 + Math.random() * 0.3;
+        speed += (targetSpeed - speed) * 0.06;
+
+        x += Math.cos(angle) * speed;
+        y += Math.sin(angle) * speed;
+        const deg = angle * (180 / Math.PI);
+        el.style.transform = `translate3d(${x - half}px, ${y - half}px, 0) rotate(${deg}deg)`;
+        return;
+      }
+
+      // ── Normal autonomous modes ─────────────────────────
+      if (mode === 'spinning') {
+        spinTimer--;
+        if (spinTimer <= 0) { mode = 'onscreen'; resetOnTimer(); }
+        angle += 0.13; speed += (targetSpeed - speed) * 0.05;
+        x += Math.cos(angle) * speed; y += Math.sin(angle) * speed;
+        el.style.transform = `translate3d(${x - half}px, ${y - half}px, 0) rotate(${angle * 180/Math.PI}deg)`;
+        return;
+      }
+
+      if (mode === 'offscreen') {
+        offTimer--; if (offTimer <= 0) enterFromEdge(); return;
+      }
+
+      if (mode === 'exiting') {
+        speed += (targetSpeed - speed) * 0.04;
+        wanderAngle += (Math.random() - 0.5) * 0.09; wanderAngle *= 0.88;
+        steerToward(exitTarget.x, exitTarget.y, 0.06);
+        x += Math.cos(angle) * speed; y += Math.sin(angle) * speed;
+        el.style.transform = `translate3d(${x - half}px, ${y - half}px, 0) rotate(${angle * 180/Math.PI}deg)`;
+        if (x < -size || x > W + size || y < -size || y > H + size) {
+          el.style.display = 'none';
+          offTimer = Math.floor((5 + Math.random() * 10) * 60);
+          mode = 'offscreen';
+        }
+        return;
+      }
+
+      if (mode === 'entering') {
+        speed += (targetSpeed - speed) * 0.04;
+        wanderAngle += (Math.random() - 0.5) * 0.05; wanderAngle *= 0.9;
+        angle += wanderAngle;
+        x += Math.cos(angle) * speed; y += Math.sin(angle) * speed;
+        el.style.transform = `translate3d(${x - half}px, ${y - half}px, 0) rotate(${angle * 180/Math.PI}deg)`;
+        if (x > margin && x < W - margin && y > margin && y < H - margin) {
+          resetOnTimer(); mode = 'onscreen';
+        }
+        return;
+      }
+
+      if (isPaused) {
+        pauseTimer--;
+        if (pauseTimer <= 0) { isPaused = false; angle += (Math.random()-0.5)*1.2; targetSpeed = 0.8+Math.random()*2; }
+        return;
+      }
+
+      onTimer--;
+      if (onTimer <= 0) { chooseExit(); return; }
+
+      wanderAngle += (Math.random() - 0.5) * 0.12; wanderAngle *= 0.92;
+      angle += wanderAngle;
+      timeSinceTurn++;
+      if (timeSinceTurn > 120 + Math.random() * 300) {
+        angle += (Math.random() - 0.5) * 2.0;
+        timeSinceTurn = 0; targetSpeed = 0.5 + Math.random() * 1.4;
+      }
+      if (Math.random() < 0.007) { isPaused = true; pauseTimer = Math.floor(90 + Math.random() * 210); return; }
+
+      if (x < margin)      angle += 0.08 * ((margin - x) / margin);
+      if (x > W - margin)  angle -= 0.08 * ((x - (W - margin)) / margin);
+      if (y < margin)      angle += 0.08 * ((margin - y) / margin);
+      if (y > H - margin)  angle -= 0.08 * ((y - (H - margin)) / margin);
+
+      x = Math.max(0, Math.min(W - size, x));
+      y = Math.max(0, Math.min(H - size, y));
+      speed += (targetSpeed - speed) * 0.04;
+      x += Math.cos(angle) * speed; y += Math.sin(angle) * speed;
+      el.style.transform = `translate3d(${x - half}px, ${y - half}px, 0) rotate(${angle * 180/Math.PI}deg)`;
+    }
+
+    el.style.display = 'block';
+    tick();
+  }
+
+  // ── Spawn both bugs ──────────────────────────────────────
+  const W = window.innerWidth, H = window.innerHeight;
+
+  createBug({
+    src:    'images/lady.gif',
+    size:   72,
+    margin: 80,
+    startX: W * 0.3 + Math.random() * W * 0.4,
+    startY: H * 0.3 + Math.random() * H * 0.4,
+  });
+
+  createBug({
+    src:    'images/beetle.gif',
+    size:   108,
+    margin: 60,
+    startX: W * 0.3 + Math.random() * W * 0.4,
+    startY: H * 0.3 + Math.random() * H * 0.4,
+  });
+
+})();
+</script>
+</body>
+</html>

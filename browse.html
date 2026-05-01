@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/archive-core.css?v=1">
+    <link rel="stylesheet" href="styles/open-map.css?v=5.6">
+    
+    <style>
+        /* Base Layout */
+        body { 
+            margin: 0; 
+            font-family: 'IBM Plex Mono', monospace; 
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            background-color: #d5a388;
+            overflow-y: auto; /* Re-enable vertical scrolling for the overlay text! */
+            overflow-x: hidden;
+        }
+
+        /* Back Button */
+        #back-btn {
+            position: fixed;
+            top: 5px;
+            left: 5px;
+            z-index: 9999;
+            pointer-events: auto;
+            transition: transform 0.2s;
+        }
+        #back-btn img {
+            width: 60px;
+            height: auto;
+            display: block;
+        }
+        #back-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        /* UNDERLAY for Walls and Map */
+        .underlay-page {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 1; 
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Fit against the left side */
+            justify-content: space-between;
+        }
+
+        .wall-img {
+            width: 66.8%; /* Exact Cargo width restored */
+            display: block;
+            pointer-events: none;
+        }
+        
+        #wall-top { margin-top: 0; }
+        #wall-bottom { margin-bottom: 0; }
+
+        /* The Box representing the Map Window */
+        #open-map-container {
+            flex-grow: 1; /* Automatically sucks up all vertical space between the wall images */
+            width: 66.8%; /* Bind the map width to be exactly the same as the walls */
+            position: relative;
+            overflow: hidden; /* Hide scrollbars to allow pure drag */
+            background-color: transparent; /* Makes the map background color the page's color */
+        }
+        
+        /* Overlay Layout Restored */
+        .overlay-page {
+            position: relative; z-index: 2; 
+            min-height: 100vh; pointer-events: none; /* Let map clicks through */
+            padding: 2rem;
+            width: 100vw;
+            box-sizing: border-box;
+        }
+        .overlay-page column-unit.text-col {
+            pointer-events: auto; /* Reactivates click events ONLY for text block */
+        }
+        column-set {
+            display: grid; grid-template-columns: repeat(12, 1fr);
+            gap: 1rem; width: 100%;
+        }
+        column-unit { grid-column: span 1; }
+        column-unit[span="2"] { grid-column: span 2; }
+        column-unit[span="3"] { grid-column: span 3; }
+        column-unit[span="4"] { grid-column: span 4; }
+        column-unit[span="6"] { grid-column: span 6; }
+        column-unit[span="12"] { grid-column: span 12; }
+        
+        /* Map CSS Overrides */
+        #map-viewport { height: 100% !important; background: transparent !important; touch-action: none; }
+        .grid-bg { 
+            pointer-events: none;
+        }
+        /* Removed hardcoded .cargo-popup override to allow open-map.css positioning */
+        .header-info { display: none !important; }
+    </style>
+    <link rel="stylesheet" href="styles/custom-cursor.css">
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="home.html" id="back-btn">
+        <img src="images/back.png" alt="Back" />
+    </a>
+
+    <!-- UNDERLAY CONTENT -->
+    <div class="underlay-page page">
+        <img id="wall-top" src="images/wall.png" class="wall-img" alt="Wall">
+        
+        <div id="open-map-container">
+              <div class="header-info"></div>
+
+              <div id="map-viewport">
+                <div id="map-canvas">
+                  <div class="grid-bg"></div>
+                  <div id="shelf-layer"></div>
+                </div>
+              </div>
+
+              <div id="lightbox-overlay">
+                <div id="lightbox-card"></div>
+              </div>
+        </div>
+
+        <div class="cargo-popup" id="project-window">
+            <div class="popup-header">
+                <h2>Project Workspace</h2>
+                <p>Drag items here to collect them</p>
+            </div>
+            <div class="drop-zone" id="drop-zone">
+                <!-- Collected items appear here -->
+            </div>
+            <a href="mailto:?subject=Archive Selection" id="workspace-archive-link">see me in the archive</a>
+        </div>
+
+        <div class="ui-overlay" id="filter-container">
+            <div class="search-container">
+                <input type="text" id="archive-search" placeholder="Search archive...">
+            </div>
+
+            <div class="sort-container">
+                <span class="sort-label">Arrange:</span>
+                <select class="sort-select" id="sort-select">
+                <option value="map">Map (Scattered)</option>
+                <option value="title">By Title</option>
+                <option value="author">By Author</option>
+                <option value="date">By Date</option>
+                <option value="category">By Category</option>
+                </select>
+            </div>
+        </div>
+
+        <img id="wall-bottom" src="images/wallbottom.png" class="wall-img" alt="Wall Bottom">
+    </div>
+
+    <!-- OVERLAY CONTENT (Restored Text) -->
+    <div id="C3306186846" class="overlay-page bodycopy">
+        <br><br><br>
+        <column-set>
+            <column-unit slot="0" span="2"></column-unit>
+            <column-unit slot="1" span="1"></column-unit>
+            <column-unit slot="2" span="3"></column-unit>
+            <column-unit slot="3" span="2"></column-unit>
+            <column-unit slot="4" span="1" class="text-col" style="transform: translateX(2mm);">Browse Feature: search through the archive use this feature.<br><br>Move through the map to explore a random selection of content, or search by name title or date through the shelves.<br><br>Drag items into your workspace to keep track of them, and even visit then in the natural history museum archives!</column-unit>
+            <column-unit slot="5" span="3"></column-unit>
+        </column-set>
+    </div>
+
+
+    <!-- Initialize Map Logic and Beetle Crawler -->
+    <script src="scripts/open-map.js?v=20.0"></script>
+    <script src="scripts/beetle-crawler.js"></script>
+    <script src="scripts/custom-cursor.js?v=3"></script>
+    <script src="scripts/email-popup.js?v=1"></script>
+</body>
+</html>

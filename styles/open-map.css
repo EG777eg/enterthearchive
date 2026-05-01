@@ -1,0 +1,429 @@
+/**
+ * OPEN-MAP.CSS - CLEAN SWEEP REWRITE
+ * --------------------------------
+ * Minimalist, high-performance styles for the physics map 
+ * and the 3-column scrollable grid.
+ */
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    background-color: #d5a388;
+    color: #1a1a1a;
+    overflow: hidden;
+}
+
+#map-viewport {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: grab;
+    overflow: hidden;
+    background: transparent;
+    transition: background 0.5s ease;
+}
+
+/* Shelf Mode (Grid) Overrides */
+body.is-shelf-mode #map-viewport {
+    overflow-y: auto !important;
+    cursor: default;
+}
+
+#map-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4500px;
+    height: 4500px;
+    transform-origin: 0 0;
+    will-change: transform;
+}
+
+.grid-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-size: 100px 100px;
+    background-image: 
+        linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+    pointer-events: none;
+}
+
+.dynamic-shelf {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: auto;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body.is-shelf-mode .grid-bg {
+    display: none;
+}
+
+.book-popup.expanded .node-meta {
+    opacity: 1;
+    transform: translateY(-18px);
+    transition: transform 0.3s ease;
+}
+
+/* Archive Nodes */
+.archive-node {
+    position: absolute;
+    width: 200px;
+    height: 260px;
+    cursor: pointer;
+    transition: transform 0.3s ease, left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    perspective: 1000px;
+    touch-action: none;
+    pointer-events: auto !important;
+}
+
+.wave-container {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px;
+    box-sizing: border-box;
+    text-align: center;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+    transition: transform 0.3s ease;
+}
+
+.archive-node:hover {
+    z-index: 1000 !important;
+}
+
+.archive-node:hover .wave-container {
+    transform: scale(1.05) translateY(-5px) !important;
+    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5));
+    animation: none !important;
+}
+
+/* Specific Shelf Mode Hovers */
+body.is-shelf-mode .archive-node .wave-container {
+    transform: scale(0.8) !important;
+}
+
+body.is-shelf-mode .archive-node:hover .wave-container {
+    transform: scale(1.05) translateY(-10px) !important;
+}
+
+/* Node Metadata */
+.node-meta {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    pointer-events: none;
+    padding: 10px;
+    border-radius: 4px;
+    justify-content: center;
+    align-items: center;
+}
+
+.node-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    white-space: normal;
+    line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    max-height: 4.8em;
+    overflow: hidden;
+}
+
+.node-author {
+    font-size: 10px;
+    color: #fff;
+    opacity: 0.9;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.node-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    width: 100%;
+}
+
+.node-date {
+    font-size: 10px;
+    color: #fff;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.node-category {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 6px;
+    border-radius: 2px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* UI Controls Overlay */
+.ui-overlay {
+    position: relative;
+    width: 66.8%;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 3px 8px;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 10000;
+    align-items: center;
+    margin: 10px 0 10px -50px; /* Space + Nudge Left */
+}
+
+#archive-search {
+    border: 1px solid rgba(0,0,0,0.1);
+    background: transparent;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    width: 80px;
+    outline: none;
+    transition: width 0.3s ease;
+}
+
+#archive-search:focus {
+    width: 120px;
+}
+
+.filter-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: color 0.2s;
+}
+
+.filter-btn.active {
+    color: #000;
+    font-weight: bold;
+}
+
+.sort-select {
+    border: 1px solid rgba(0,0,0,0.1);
+    background: transparent;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+/* --- Cargo Popup / Project Workspace Window --- */
+.cargo-popup {
+    position: absolute;
+    top: 5vh;
+    height: 90vh;
+    right: 5vh;
+    width: 20%;
+    background-image: 
+        url('../images/box.png'),
+        linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-position: center center, 0 0, 0 0;
+    background-repeat: no-repeat, repeat, repeat;
+    background-size: 100% 100%, 100px 100px, 100px 100px;
+    background-color: transparent;
+    border-radius: 0;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.popup-header {
+    padding: 22px 25px 18px 25px;
+    background: transparent;
+    border: none;
+    text-align: left;
+}
+
+.popup-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #000;
+}
+
+.popup-header p {
+    margin: 5px 0 0 0;
+    font-size: 11px;
+    color: #000;
+}
+
+.drop-zone {
+    flex: 1;
+    position: relative;
+    background: transparent;
+    overflow: hidden;
+}
+
+.drop-zone:empty::before {
+    content: 'Drop items here...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ccc;
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* Dropped cards styling */
+.drop-zone .archive-node {
+    position: absolute !important;
+    transform: scale(0.6) !important;
+    transform-origin: top left !important;
+    animation: none !important;
+    cursor: grab !important;
+    z-index: 10;
+}
+
+.drop-zone .archive-node:active {
+    cursor: grabbing !important;
+}
+
+.drop-zone .wave-container {
+    animation: none !important;
+    transform: none !important;
+}
+
+/* Lightbox */
+#lightbox-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.2);
+    z-index: 100000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#lightbox-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#lightbox-card {
+    position: absolute;
+    width: 200px;
+    height: 300px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    filter: drop-shadow(0 40px 60px rgba(0, 0, 0, 0.5));
+    transform: scale(1);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-origin: center center;
+    pointer-events: auto; 
+}
+
+#lightbox-overlay.active #lightbox-card {
+    transform: scale(1.5);
+}
+
+.lightbox-link {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 11px;
+    letter-spacing: -0.2px;
+    color: #fff !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255,255,255,1) !important;
+    opacity: 1 !important;
+    transition: none;
+    pointer-events: auto !important;
+    text-transform: lowercase !important;
+}
+
+.lightbox-link:hover {
+    opacity: 1;
+    text-decoration-color: rgba(255,255,255,1);
+}
+
+#workspace-archive-link {
+    display: block;
+    padding: 20px 20px 40px 20px;
+    margin-bottom: 1vh;
+    font-size: 10px;
+    color: #000 !important;
+    text-decoration: underline !important;
+    text-align: center;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    z-index: 1001;
+    background: transparent;
+    font-weight: 500;
+}
+
+/* --- Restoration of Original Physics Keyframes --- */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(0.4deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.is-idle .archive-node {
+  animation: float 7s ease-in-out infinite;
+}
+
+@keyframes node-bob {
+  0% { 
+    transform: translateY(0) scale(1) rotateX(0deg) rotateY(0deg) skew(0deg, 0deg); 
+    border-radius: 4px;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2)); 
+  }
+  25% { 
+    transform: translateY(5px) scale(0.95, 1.05) rotateX(calc(var(--rx, 0deg) * -0.5)) rotateY(calc(var(--ry, 0deg) * -0.5)) skew(calc(var(--ry, 0deg) * 0.2), calc(var(--rx, 0deg) * -0.2)); 
+    border-radius: 8px 16px 8px 16px;
+  }
+  50% { 
+    transform: translateY(-26px) scale(1.12, 1.12) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) skew(0deg, 0deg);
+    border-radius: 20px;
+    filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.3)); 
+  }
+  75% { 
+    transform: translateY(8px) scale(1.06, 0.92) rotateX(calc(var(--rx, 0deg) * -0.6)) rotateY(calc(var(--ry, 0deg) * -0.6)) skew(calc(var(--ry, 0deg) * -0.2), calc(var(--rx, 0deg) * 0.2)); 
+    border-radius: 16px 8px 16px 8px;
+  }
+  100% { 
+    transform: translateY(0) scale(1) rotateX(0deg) rotateY(0deg) skew(0deg, 0deg); 
+    border-radius: 4px;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2)); 
+  }
+}

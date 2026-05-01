@@ -1,0 +1,86 @@
+:root {
+    --archive-scale: 1;
+}
+
+.wave-container {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: calc(12px * var(--archive-scale));
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.node-meta {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: calc(2px * var(--archive-scale));
+    pointer-events: none;
+    padding: calc(10px * var(--archive-scale));
+    border-radius: 4px;
+    justify-content: center;
+    align-items: center;
+}
+
+.node-title {
+    font-size: calc(13px * var(--archive-scale));
+    font-weight: 500;
+    color: #fff !important;
+    white-space: normal;
+    line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    max-height: 4.8em;
+    overflow: hidden;
+}
+
+.node-author {
+    font-size: calc(10px * var(--archive-scale));
+    color: #fff !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.node-date {
+    font-size: calc(10px * var(--archive-scale));
+    color: #fff !important;
+    opacity: 1 !important;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.node-category {
+    font-size: calc(9px * var(--archive-scale));
+    text-transform: uppercase;
+    letter-spacing: calc(1px * var(--archive-scale));
+    padding: calc(3px * var(--archive-scale)) calc(6px * var(--archive-scale));
+    border-radius: 2px;
+    font-weight: 600;
+    color: #fff !important;
+    opacity: 1 !important;
+    background: rgba(255,255,255,0.15);
+    border: 0.5px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+.node-title, .node-author, .node-date, .node-category, .node-meta a {
+    mix-blend-mode: normal !important;
+}
+
+.node-meta a,
+.node-meta a:link,
+.node-meta a:visited,
+.node-meta a:hover,
+.node-meta a:active {
+    color: #ffffff !important;
+    text-decoration: underline;
+    opacity: 1 !important;
+}
+
+
